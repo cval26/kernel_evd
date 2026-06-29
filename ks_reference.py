@@ -5,11 +5,11 @@ import scipy as scp
 def main():
     Lfact = 7 # domain length factor
     Nq = 64 # delays
-    N = 500 # temporal space dim
+    N = 512 # temporal space dim
     M = 64 # spatial space dim
     NM = N * M # product space dim
 
-    eps = 50 # kernel bandwidth
+    eps = 32 # kernel bandwidth
 
     # Read the delay embedded samples.
     u = np.empty((NM, Nq), dtype=np.float64)

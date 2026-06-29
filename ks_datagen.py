@@ -13,7 +13,7 @@ def main():
     Nsave = 4 # save solution every Nsave timesteps
     Nequil = 10000 # timesteps to approach equilibrium
 
-    Nfinal = 500 # final amount of snapshots saved
+    Nfinal = 2048 # final amount of snapshots saved
     N = int(Nsave * (Nfinal + Nq - 2)) # total timesteps
 
     xvec = L * np.arange(-int(M/2), int(M/2))/M # grid vector
