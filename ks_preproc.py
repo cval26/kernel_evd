@@ -1,17 +1,21 @@
 import time
+import h5py
 import numpy as np
 
 def main():
     Lfact = 7 # domain length factor
-    Ntrue = 2111 # training samples
+
+    Ntrue = 575 # training samples
     Nq = 64 # delays
     N = Ntrue - Nq + 1 # temporal space dim
+
     M = 64 # spatial space dim
     NM = N * M # product space dim
 
     # Read the true state samples.
-    utrue = np.empty((Ntrue, M), dtype=np.float64)
-    utrue = np.load(f"data/ks_true_{Ntrue}_{M}_{Lfact}_u.npy")
+    fname = f"data/ks_true_{Ntrue}_{M}_{Lfact}.h5"
+    with h5py.File(fname, "r") as f:
+        utrue = f["u"][:].reshape((Ntrue, M), order="F")
 
     # Transform into delay form.
     # Each row contains the delay embedded data for the selected
@@ -21,9 +25,11 @@ def main():
         for j in range(M):
             udelay[i*M+j, :] = utrue[i:i+Nq, j]
 
-    #np.save(f"data/ks_train_{NM}_{Nq}_{Lfact}_udelay.npy", udelay)
-    udelay32 = np.transpose(udelay.astype(np.float32))
-    np.save(f"data/ks_train_{NM}_{Nq}_{Lfact}_udelay32.npy", udelay32)
+    # Store the delay embedded data.
+    fnamed = f"data/ks_train_{NM}_{Nq}_{Lfact}_udelay.h5"
+    with h5py.File(fnamed, "w") as f:
+        f.create_dataset("u", shape=(NM*Nq,), dtype=np.float64,
+                         data=udelay.flatten(order="F"))
     return None
 
 if __name__ == '__main__':

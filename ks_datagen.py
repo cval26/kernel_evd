@@ -1,4 +1,5 @@
 import time
+import h5py
 import numpy as np
 
 def main():
@@ -10,11 +11,12 @@ def main():
 
     dt = 0.25 # timestep
     Nq = 64 # delays
-    Nsave = 4 # save solution every Nsave timesteps
+    Nsave = 1 # save solution every Nsave timesteps
     Nequil = 10000 # timesteps to approach equilibrium
 
-    Nfinal = 2048 # final amount of snapshots saved
-    N = int(Nsave * (Nfinal + Nq - 2)) # total timesteps
+    Nfinal = 512 # final amount of delay embedded snapshots
+    Ntrue = Nfinal + Nq - 1 # true amount of snapshots
+    Nt = int(Nsave * (Ntrue - 1)) # total timesteps
 
     xvec = L * np.arange(-int(M/2), int(M/2))/M # grid vector
 
@@ -46,8 +48,8 @@ def main():
                             axis=-1))
 
     # Solution and time storage arrays.
-    usave = np.empty((N//Nsave+1, M), dtype=np.float64)
-    tsave = np.empty((N//Nsave+1,), dtype=np.float64)
+    usave = np.empty((Ntrue, M), dtype=np.float64)
+    tsave = np.empty((Ntrue,), dtype=np.float64)
     tsave[0] = 0.0
 
     # Timestepping used to reach equilibrium.
@@ -69,7 +71,7 @@ def main():
 
     # Main timestepping loop.
     nsave = 1
-    for n in range(N):
+    for n in range(Nt):
         # FFT(u*u_x); uses 3/2 dealiasing.
         Nu = gg * np.fft.rfft(np.fft.irfft(ufou, n=Mext)**2)[:M2]
         a = e2*ufou + f0*Nu
@@ -86,8 +88,19 @@ def main():
             tsave[nsave] = (Nequil+n+1) * dt
             nsave += 1
 
-    np.save(f"data/ks_true_{N//Nsave+1}_{M}_{Lfact}_u.npy", usave)
-    np.save(f"data/ks_true_{N//Nsave+1}_{M}_{Lfact}_t.npy", tsave)
+    fname = f"data/ks_true_{Ntrue}_{M}_{Lfact}.h5"
+    with h5py.File(fname, "w") as f:
+        f.create_dataset("u", shape=(Ntrue*M,), dtype=np.float64,
+                         data=usave.flatten(order="F"))
+        f.create_dataset("t", shape=(Ntrue,), dtype=np.float64,
+                         data=tsave)
+
+    fname32 = f"data/ks_true_{Ntrue}_{M}_{Lfact}_u32.h5"
+    with h5py.File(fname32, "w") as f:
+        f.create_dataset("u", shape=(Ntrue*M,), dtype=np.float32,
+                         data=usave.astype(np.float32).flatten(order="F"))
+        f.create_dataset("t", shape=(Ntrue,), dtype=np.float64,
+                         data=tsave)
 
     return None
 
